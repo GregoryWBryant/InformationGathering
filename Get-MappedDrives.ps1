@@ -22,5 +22,3 @@ foreach ($Drive in $Drives) {
 }
 
 $AllMappedDrives | Export-Csv -Path ("\\ShareServer\MappedDrives\AllMappedDrives.csv") -NoTypeInformation -Append
-
-Remove-Item -Path "C:\Temp\Get-MappedDrives.ps1" -Force
