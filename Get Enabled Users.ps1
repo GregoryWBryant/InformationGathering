@@ -1,4 +1,4 @@
-﻿<#
+<#
 Script is useful for gathering how many users are in Active Directory
 Creates a Folder on your desktop
 Queries Active Directory for all enabled users
@@ -14,26 +14,26 @@ if(!(Test-Path -Path $SavePath)) {
 }
 
 $NewUsers = @()
-$Users = Get-ADUser -Filter * | Where { $_.Enabled -eq $True}
+$Users = Get-ADUser -Filter * -Properties * | Where { $_.Enabled -eq $True}
 
 foreach ($User in $Users) {
 
-    $Info = Get-ADUser -Identity $User.SamAccountName -Properties *
-    $ProxyAddresses = $Info.proxyAddresses -join ", "
-    $Groups = $Info.MemberOf -join ", "
+    $ProxyAddresses = $User.proxyAddresses -join ", "
+    $Groups = $User.MemberOf -join ", "
     $NewUser = [PSCustomObject]@{
-        FirstName = $Info.GivenName
-        LastName = $Info.Surname
-        Name = $Info.DisplayName
-        UPN = $Info.UserPrincipalName
-        SamAccount = $Info.SamAccountName
-        Title = $Info.Title
-        LastLogonDate = $Info.LastLogonDate
-        LastLogonTimeStamp = [DateTime]::FromFileTime($Info.lastLogonTimestamp).ToString('yyyy-MM-dd_hh:mm:ss')
-        Email = $Info.EmailAddress
+        FirstName = $User.GivenName
+        LastName = $User.Surname
+        Name = $User.DisplayName
+        UPN = $User.UserPrincipalName
+        SamAccount = $User.SamAccountName
+        Title = $User.Title
+        LastLogonDate = $User.LastLogonDate
+        LastLogonTimeStamp = [DateTime]::FromFileTime($User.lastLogonTimestamp).ToString('yyyy-MM-dd_hh:mm:ss')
+        Email = $User.EmailAddress
         Proxy = $ProxyAddresses
         MemberOf = $Groups
-        HomeDirectory = $Info.HomeDirectory
+        HomeDirectory = $User.HomeDirectory
+        LogonScript = $User.ScriptPath
         OU = $Info.CanonicalName
         PasswordNeverExpires = $info.PasswordNeverExpires
 
