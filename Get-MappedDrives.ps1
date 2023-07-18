@@ -1,5 +1,5 @@
 ﻿<#
-Before running this script you need to setup a Shared Folder that Authenticated users can wrote to.
+Before running this script you need to setup a Shared Folder that Authenticated users can write to.
 You need to run this script on the Computers with either System or a Local Admin
 This will query the Registry to get all Mapped drives for all users.
 #>
