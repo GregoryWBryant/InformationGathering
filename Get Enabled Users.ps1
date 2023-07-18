@@ -33,12 +33,13 @@ foreach ($User in $Users) {
         Proxy = $ProxyAddresses
         MemberOf = $Groups
         HomeDirectory = $User.HomeDirectory
+        ProfilePath = $User.ProfilePath
         LogonScript = $User.ScriptPath
-        OU = $Info.CanonicalName
-        PasswordNeverExpires = $info.PasswordNeverExpires
+        OU = $User.CanonicalName
+        PasswordNeverExpires = $User.PasswordNeverExpires
 
     }
-    $NewUsers += $NewUser
+    $NewUsers += $NewUser #>
 
 }
 
