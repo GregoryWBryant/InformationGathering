@@ -167,7 +167,7 @@ Foreach ($Server in $Servers.Name) {
             $AllApplications += $NewApplication
 
        }
-       $AllApplications | Export-Csv -Path ($SavePath + $Server.Name + "-Applications.csv")  -NoTypeInformation
+       $AllApplications | Export-Csv -Path ($SavePath + $ComputerName + "-Applications.csv")  -NoTypeInformation
     
     } else {
 
