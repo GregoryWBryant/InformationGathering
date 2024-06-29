@@ -1,70 +1,93 @@
-﻿<#
-Script is useful for gathering Applications installed on Servers in Active Directory
-Creates a Folder on your desktop
-Queries Registry on each server and creates CSV files on each
-Copies the CSV to the Server you ran this from
+<#
+    Script Name: Get-ServerApplicationInventory.ps1
+
+    Description
+        Gathers information about installed applications on servers in Active Directory.
+        Creates a folder named "Information Gathered" on your desktop.
+        For each server:
+            Queries the registry (HKLM\Software\...) for installed applications.
+            Creates a CSV file on the server itself (in C:\Temp).
+            Copies the CSV file to the "Information Gathered" folder on your computer.
+            Removes the temporary CSV file from the server.
+
+    Requirements
+        Active Directory module for PowerShell (already included by default).
+        Sufficient permissions to query Active Directory and access the remote servers.
+
+    Usage
+        Run this script from a Server that is joined to the domain and can reach all other servers.
+
+    Note
+        Make sure the "C:\Temp" folder exists on each server, or modify the path as needed.
+        This script assumes that the server's C$ share (administrative share) is accessible from your computer.
 #>
 
-$DesktopPath = [System.Environment]::GetFolderPath([System.Environment+SpecialFolder]::Desktop)
+# Get the path to your desktop
+$DesktopPath = [System.Environment]::GetFolderPath([System.Environment.SpecialFolder]::Desktop)
+
+# Creates a folder to store the results
 $SavePath = $DesktopPath + "\Information Gathered\"
-if(!(Test-Path -Path $SavePath)) {
-
+if (-not (Test-Path -Path $SavePath)) {
     New-Item -Path $SavePath -ItemType Directory -Force
-
 }
 
+# Get the name of the computer you are running the script on
 $ComputerName = (Get-ComputerInfo).CSName
 
-$Servers = Get-ADComputer -Filter {enabled -eq $true -and OperatingSystem -like '*Windows Server*'} -Properties *
+# Get a list of all enabled servers in Active Directory
+$Servers = Get-ADComputer -Filter {Enabled -eq $true -and OperatingSystem -like '*Windows Server*'} -Properties *
 
-$Reg32 = "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*"
-$Reg64 = "HKLM:\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*"
+# Iterate through each server in the list
+foreach ($Server in $Servers.Name) {
 
-Foreach ($Server in $Servers) {
-
-    if ($Server.Name -eq $ComputerName) {
-    
-        $AllApplications = @()
-        $Reg32 = "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*"
-        $Reg64 = "HKLM:\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*"
-        $Applications = Get-ItemProperty -Path $Reg32,$Reg64 | Select-Object DisplayName, DisplayVersion, InstallDate
+    # If the server is the same as the computer you are running the script on...
+    if ($Server -eq $ComputerName) {
+        $AllApplications = @() # Initialize an empty array to store application data
+        $Reg32 = "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*"  # 32-bit registry key path
+        $Reg64 = "HKLM:\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*"  # 64-bit registry key path
+        # Get installed application information from both 32-bit and 64-bit registry keys
+        $Applications = Get-ItemProperty -Path $Reg32, $Reg64 | Select-Object DisplayName, DisplayVersion, InstallDate
+        
+        # Create custom objects for each application and add to the array
         foreach ($Application in $Applications) {
             $NewApplication = [PSCustomObject]@{
                 Server = $Server.Name
                 Name = $Application.DisplayName
                 Version = $Application.DisplayVersion
                 InstalledOn = $Application.InstallDate
-           }
+            }
+            $AllApplications += $NewApplication 
+        }
 
-            $AllApplications += $NewApplication
-
-       }
-       $AllApplications | Export-Csv -Path ($SavePath + $Server.Name + "-Applications.csv")  -NoTypeInformation
-    
+        # Export the application information to a CSV file in the Information Gathered folder
+        $AllApplications | Export-Csv -Path ($SavePath + $ComputerName + "-Applications.csv") -NoTypeInformation 
     } else {
+        # If the server is not the same as the computer you are running the script on...
 
-        Invoke-Command -ComputerName $Server.Name {
-            $ComputerName = (Get-ComputerInfo).CSName
+        # Use Invoke-Command to run the script remotely on the server
+        Invoke-Command -ComputerName $Server {
+            $ComputerName = (Get-ComputerInfo).CSName # Get the server name
             $AllApplications = @()
             $Reg32 = "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*"
             $Reg64 = "HKLM:\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*"
             $Applications = Get-ItemProperty -Path $Reg32,$Reg64 | Select-Object DisplayName, DisplayVersion, InstallDate
-            foreach ($Application in $Applications) {
 
+            foreach ($Application in $Applications) {
                 $NewApplication = [PSCustomObject]@{
                     Server = $ComputerName
                     Name = $Application.DisplayName
                     Version = $Application.DisplayVersion
                     InstalledOn = $Application.InstallDate
                 }
-
                 $AllApplications += $NewApplication
-
             }
+            # Export the application information to a CSV file in the C:\Temp folder on the server
             $AllApplications | Export-Csv -Path ("C:\Temp\" + $ComputerName + "-Applications.csv") -NoTypeInformation
         }
-        Copy-Item -Path ("\\" + $Server.Name + "\C$\Temp\" + $Server.Name + "-Applications.csv") -Destination ($SavePath + $Server.Name + "-Applications.csv")
-        #Uncomment if you wish to remove the file from the remote server
-        #Remove-Item -Path ("\\" + $Server.Name + "\C$\Temp\" + $Server.Name + "-Applications.csv") 
+        
+        # Copy the CSV file from the server to the Information Gathered folder on your computer
+        Copy-Item -Path ("\\" + $Server + "\C$\Temp\" + $Server + "-Applications.csv") -Destination ($SavePath + $Server + "-Applications.csv")
+        # Remove the temporary CSV file from the server
+        Remove-Item -Path ("\\" + $Server + "\C$\Temp\" + $Server + "-Applications.csv") 
     }
 }
