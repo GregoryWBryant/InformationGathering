@@ -27,6 +27,7 @@
             Get-ACLs -Path "C:\MyDocuments" -Recursive
 
             This example retrieves the ACLs for all folders and subfolders within the "C:\MyDocuments" directory.
+            
         .Notes
             Should be ran ad Administrator for best results.
     #>
@@ -48,7 +49,7 @@
     if (!(Test-Path -Path $SavePath)) {
         New-Item -Path $SavePath -ItemType Directory -Force
         }
-
+        
     # Determines how to get folders based on the Recursive parameter
     if ($Recursive) {
         # Gets all directories recursively (including subfolders) in the specified path, excluding some predefined folders for efficiency
