@@ -1,4 +1,4 @@
-﻿function Get-ACLs {
+﻿function Get-ACLsFolders {
     <#
         .SYNOPSIS
             Gets the Access Control Lists (ACLs) for folders within a specified path.
