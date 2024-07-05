@@ -1,24 +1,23 @@
-﻿<#
-    .SYNOPSIS
-    Retrieves information about disabled users in Active Directory and exports it to a CSV file.
-
-    .DESCRIPTION
-    This script collects detailed information about all disabled users in Active Directory, including their 
-    properties such as display name, user principal name, group memberships, manager information, and organizational unit.
-    The collected information is saved to a CSV file on the user's desktop.
-
-    .PARAMETER None
-    The script does not require any parameters.
-
-    .EXAMPLE
-    PS C:\> Get-ADDisabledUsers
-    Retrieves information about Disabled users in Active Directory and saves it to a CSV file on the desktop.
-
-    .NOTES
-    The script requires the Active Directory PowerShell module.
-#>
-
 function Get-ADDisabledUsers {
+    <#
+        .SYNOPSIS
+            Retrieves information about disabled users in Active Directory and exports it to a CSV file.
+
+        .DESCRIPTION
+            This script collects detailed information about all disabled users in Active Directory, including their 
+            properties such as display name, user principal name, group memberships, manager information, and organizational unit.
+            The collected information is saved to a CSV file on the user's desktop.
+
+        .PARAMETER None
+            The script does not require any parameters.
+
+        .EXAMPLE
+            Get-ADDisabledUsers
+            Retrieves information about Disabled users in Active Directory and saves it to a CSV file on the desktop.
+
+        .NOTES
+            The script requires the Active Directory PowerShell module.
+    #>
 
     # Get the path to the user's desktop
     $DesktopPath = [System.Environment]::GetFolderPath([System.Environment+SpecialFolder]::Desktop)
