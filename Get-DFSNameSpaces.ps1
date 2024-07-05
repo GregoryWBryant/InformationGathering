@@ -1,23 +1,22 @@
-<#
-    .SYNOPSIS
-    Retrieves DFS Namespace and target information from the current domain.
-
-    .DESCRIPTION
-    This script identifies all DFS Namespaces in the current domain and collects information about each DFS folder and its targets. 
-    The results are saved to a CSV file on the user's desktop, providing details about the namespace path, folder name, target path, and state.
-
-    .PARAMETER None
-    The script does not require any parameters.
-
-    .EXAMPLE
-    PS C:\> Get-DFSNamespaces
-    Retrieves DFS Namespace and target information and saves the information to a CSV file on the desktop.
-
-    .NOTES
-    The script requires the DFS be installed on the local device.
-#>
-
 function Get-DFSNameSpaces {
+    <#
+        .SYNOPSIS
+            Retrieves DFS Namespace and target information from the current domain.
+
+        .DESCRIPTION
+            This script identifies all DFS Namespaces in the current domain and collects information about each DFS folder and its targets. 
+            The results are saved to a CSV file on the user's desktop, providing details about the namespace path, folder name, target path, and state.
+
+        .PARAMETER None
+            The script does not require any parameters.
+
+        .EXAMPLE
+            et-DFSNamespaces
+            Retrieves DFS Namespace and target information and saves the information to a CSV file on the desktop.
+
+        .NOTES
+            The script requires the DFS be installed on the local device.
+    #>
 
     # Get the path to the user's desktop
     $DesktopPath = [System.Environment]::GetFolderPath([System.Environment+SpecialFolder]::Desktop)
