@@ -1,22 +1,21 @@
-<#
-    .SYNOPSIS
-        Retrieves printer information from enabled Windows Server machines in Active Directory and exports it to a CSV file.
-
-    .DESCRIPTION
-        This script retrieves printer details including server name, printer name, driver name, driver type, port name, port IP address, device URL, and status from Windows Server machines. It uses PowerShell cmdlets such as Get-Printer and Get-PrinterPort to gather this information.
-
-    .PARAMETER
-        No additional parameters.
-
-    .EXAMPLE
-        Get-Printers
-        Retrieves printer information from all enabled Windows Server machines in Active Directory and saves it to a CSV file named "Printers.csv" in the Information Gathered folder on the desktop.
-
-    .NOTES
-        The script requires the Active Directory PowerShell module and administrator privileges to retrieve printer information from remote servers.
-#>
-
 function Get-Printers {
+    <#
+        .SYNOPSIS
+            Retrieves printer information from enabled Windows Server machines in Active Directory and exports it to a CSV file.
+
+        .DESCRIPTION
+            This script retrieves printer details including server name, printer name, driver name, driver type, port name, port IP address, device URL, and status from Windows Server machines. It uses PowerShell cmdlets such as Get-Printer and Get-PrinterPort to gather this information.
+
+        .PARAMETER
+            No additional parameters.
+
+        .EXAMPLE
+            Get-Printers
+            Retrieves printer information from all enabled Windows Server machines in Active Directory and saves it to a CSV file named "Printers.csv" in the Information Gathered folder on the desktop.
+
+        .NOTES
+            The script requires the Active Directory PowerShell module and administrator privileges to retrieve printer information from remote servers.
+    #>
 
     # Get the path to the user's desktop
     $DesktopPath = [System.Environment]::GetFolderPath([System.Environment+SpecialFolder]::Desktop)
