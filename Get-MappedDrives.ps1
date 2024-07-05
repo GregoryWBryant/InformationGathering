@@ -10,11 +10,12 @@
         A shared folder (\\RS6\MappedDrives in this example) must exist and be accessible to authenticated users with write permissions.
 
     Note
+        This is meant to be used with a RMM tools to run this silently.
         This script only retrieves mapped drives for users whose registry hives are currently loaded (i.e., users who are logged in or whose profiles are actively loaded). Mapped drives for other users will not be detected.
 
     Usage
         Run this script on each computer where you want to collect mapped drive information.
-        The results will be appended to the AllMappedDrives.csv file on the \\RS6\MappedDrives share.
+        The results will be appended to the AllMappedDrives.csv file on the \\Server\MappedDrives share.
 #>
 
 # Get properties of all mapped drives from the registry
@@ -46,4 +47,4 @@ foreach ($Drive in $Drives) {
 }
 
 # Export the mapped drive information to a CSV file on the network share
-$AllMappedDrives | Export-Csv -Path "\\RS6\MappedDrives\AllMappedDrives.csv" -NoTypeInformation -Append
+$AllMappedDrives | Export-Csv -Path "\\Server\MappedDrives\AllMappedDrives.csv" -NoTypeInformation -Append
