@@ -1,25 +1,25 @@
-<#
-    .SYNOPSIS
-        Retrieves DHCP scope data from specified DHCP servers and exports it to CSV files.
-
-    .DESCRIPTION
-        This script collects detailed DHCP scope information, including exclusion ranges, leases, reservations, option values, and scope details from specified DHCP servers. The data is exported to CSV files stored in a directory on the user's desktop.
-
-    .PARAMETER All
-        When specified, retrieves DHCP scope data from all active servers within the specified timeframe. Otherwise, retrieves data from the local server.
-
-    .EXAMPLE
-        Get-DHCPScopeData
-        Retrieves DHCP scope data from the local server and saves it to CSV files.
-
-        Get-DHCPScopeData -All
-        Retrieves DHCP scope data from all active servers within the specified timeframe and saves it to CSV files.
-
-    .NOTES
-        The script requires the DHCP Server PowerShell module.
-#>
-
 function Get-DHCPScopeData {
+    <#
+        .SYNOPSIS
+            Retrieves DHCP scope data from specified DHCP servers and exports it to CSV files.
+
+        .DESCRIPTION
+            This script collects detailed DHCP scope information, including exclusion ranges, leases, reservations, option values, and scope details from specified DHCP servers. The data is exported to CSV files stored in a directory on the user's desktop.
+
+        .PARAMETER All
+            When specified, retrieves DHCP scope data from all active servers within the specified timeframe. Otherwise, retrieves data from the local server.
+
+        .EXAMPLE
+            Get-DHCPScopeData
+            Retrieves DHCP scope data from the local server and saves it to CSV files.
+
+            Get-DHCPScopeData -All
+            Retrieves DHCP scope data from all active servers within the specified timeframe and saves it to CSV files.
+
+        .NOTES
+            The script requires the DHCP Server PowerShell module.
+    #>
+
     param(
         [switch]$All
     )
