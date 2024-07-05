@@ -91,5 +91,5 @@ function Get-ADEnabledUsers {
     }
 
     # Export the user data to a CSV file
-    $NewUsers | Export-Csv -Path ($SavePath + "Users.csv") -NoTypeInformation
+    $NewUsers | Export-Csv -Path ($SavePath + "EnabledUsers.csv") -NoTypeInformation
 }
