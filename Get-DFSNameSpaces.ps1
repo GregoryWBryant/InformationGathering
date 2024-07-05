@@ -15,7 +15,7 @@ function Get-DFSNameSpaces {
             Retrieves DFS Namespace and target information and saves the information to a CSV file on the desktop.
 
         .NOTES
-            The script requires the DFS be installed on the local device.
+            The script requires DFS be installed on the local device.
     #>
 
     # Get the path to the user's desktop
