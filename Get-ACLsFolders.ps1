@@ -29,7 +29,7 @@
             This example retrieves the ACLs for all folders and subfolders within the "C:\MyDocuments" directory.
             
         .Notes
-            Should be ran ad Administrator for best results.
+            Should be ran as Administrator for best results.
     #>
 
     param (
