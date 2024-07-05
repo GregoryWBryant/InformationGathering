@@ -18,7 +18,7 @@
     The script requires the Active Directory PowerShell module.
 #>
 
-function Get-ADEnabledUsers {
+function Get-ADDisabledUsers {
 
     # Get the path to the user's desktop
     $DesktopPath = [System.Environment]::GetFolderPath([System.Environment+SpecialFolder]::Desktop)
