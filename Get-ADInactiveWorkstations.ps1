@@ -1,26 +1,26 @@
-﻿<#
-    .SYNOPSIS
-    Retrieves a list of inactive workstations from Active Directory.
-
-    .DESCRIPTION
-    This script identifies inactive workstations in Active Directory that have been logged into within the last specified number of days. 
-    The workstations must not be Windows Server machines. 
-    The results are saved to a CSV file on the user's desktop.
-
-    .PARAMETER Days
-    The number of days to look back from the current date for the last logon time. 
-    Default is 60 days.
-
-    .EXAMPLE
-    PS C:\> Get-ADInactiveWorkstations -Days 90
-    Retrieves a list of inactive workstations that have been logged into within the last 90 days 
-    and saves the information to a CSV file on the desktop.
-
-    .NOTES
-    The script requires the Active Directory module.
-#>
-
 function Get-ADInactiveWorkstations {
+    <#
+        .SYNOPSIS
+            Retrieves a list of inactive workstations from Active Directory.
+
+        .DESCRIPTION
+            This script identifies inactive workstations in Active Directory that have been logged into within the last specified number of days. 
+            The workstations must not be Windows Server machines. 
+            The results are saved to a CSV file on the user's desktop.
+
+        .PARAMETER Days
+            The number of days to look back from the current date for the last logon time. 
+            Default is 60 days.
+
+        .EXAMPLE
+            Get-ADInactiveWorkstations -Days 90
+            Retrieves a list of inactive workstations that have been logged into within the last 90 days 
+            and saves the information to a CSV file on the desktop.
+
+        .NOTES
+            The script requires the Active Directory module.
+    #>
+
     param (
         [int]$Days = 60
     )
