@@ -1,25 +1,22 @@
-﻿<#
-    Script: Get-DHCPScopeData
+<#
+    .SYNOPSIS
+        Retrieves DHCP scope data from specified DHCP servers and exports it to CSV files.
 
-    Purpose:
-        Gathers DHCP scope information (reservations, leases, exclusions, options) from either:
-        All active servers in the domain (if -All switch is provided)
-        The local server (if -All is not provided)
+    .DESCRIPTION
+        This script collects detailed DHCP scope information, including exclusion ranges, leases, reservations, option values, and scope details from specified DHCP servers. The data is exported to CSV files stored in a directory on the user's desktop.
 
-    Requirements:
-        Requires the DHCPServer PowerShell module.
-        To query all servers, it must be run from a domain-joined computer with access to Active Directory.
-        To query the local server, it needs to be run on a DHCP server.
+    .PARAMETER All
+        When specified, retrieves DHCP scope data from all active servers within the specified timeframe. Otherwise, retrieves data from the local server.
 
-    Parameters:
-        -All: Switch to indicate if all active servers should be queried.
+    .EXAMPLE
+        Get-DHCPScopeData
+        Retrieves DHCP scope data from the local server and saves it to CSV files.
 
-    Creates:
-        Creates a folder on your desktop to store the output CSV files.
+        Get-DHCPScopeData -All
+        Retrieves DHCP scope data from all active servers within the specified timeframe and saves it to CSV files.
 
-    Notes
-        Adjust the `$time` variable to modify the time frame for active servers.
-        File naming conventions include the server name and scope ID for easy identification.
+    .NOTES
+        The script requires the DHCP Server PowerShell module.
 #>
 
 function Get-DHCPScopeData {
@@ -28,7 +25,7 @@ function Get-DHCPScopeData {
     )
 
     # Get the path to the user's desktop
-    $DesktopPath = [System.Environment]::GetFolderPath([System.Environment.SpecialFolder]::Desktop)
+    $DesktopPath = [System.Environment]::GetFolderPath([System.Environment+SpecialFolder]::Desktop)
 
     # Create the save path for the CSV files
     $SavePath = $DesktopPath + "\Information Gathered\DHCP\"
@@ -49,11 +46,11 @@ function Get-DHCPScopeData {
                     Write-Output "Processing Server: $($Server.Name), Scope: $($Scope.ScopeId)"
 
                     # Get and export DHCP data for each scope (with server name in file name)
-                    Get-DhcpServerv4ExclusionRange -ScopeId $Scope.ScopeId -ComputerName $Server | Export-Csv -Path ($OutPutDirectory + "\" + "$Server" + "-" + $Scope.ScopeId + "-ExcusionRange.csv") -NoTypeInformation
-                    Get-DhcpServerv4Lease -ScopeId $Scope.ScopeId -ComputerName $Server | Export-Csv -Path ($OutPutDirectory + "\" + "$Server" + "-" + $Scope.ScopeId + "-Leases.csv") -NoTypeInformation
-                    Get-DhcpServerv4Reservation -ScopeId $Scope.ScopeId -ComputerName $Server | Export-Csv -Path ($OutPutDirectory + "\" + "$Server" + "-" + $Scope.ScopeId + "-Reservations.csv") -NoTypeInformation
-                    Get-DhcpServerv4OptionValue -ScopeId $Scope.ScopeId -ComputerName $Server | Select-Object OptionId,Name,Type,@{Name=’Value’;Expression={[string]::join(“;”, ($_.Value))}}  | Export-Csv -Path ($OutPutDirectory + "\" + "$Server" + "-" + $Scope.ScopeId + "-Options.csv") -NoTypeInformation
-                    Get-DhcpServerv4Scope -ScopeId $Scope.ScopeId -ComputerName $Server | Export-Csv -Path ($OutPutDirectory + "\" + "$Server" + "-" + $Scope.ScopeId + "-Scope.csv") -NoTypeInformation
+                    Get-DhcpServerv4ExclusionRange -ScopeId $Scope.ScopeId -ComputerName $Server | Export-Csv -Path ($SavePath + "\" + "$Server" + "-" + $Scope.ScopeId + "-ExclusionRange.csv") -NoTypeInformation
+                    Get-DhcpServerv4Lease -ScopeId $Scope.ScopeId -ComputerName $Server | Export-Csv -Path ($SavePath + "\" + "$Server" + "-" + $Scope.ScopeId + "-Leases.csv") -NoTypeInformation
+                    Get-DhcpServerv4Reservation -ScopeId $Scope.ScopeId -ComputerName $Server | Export-Csv -Path ($SavePath + "\" + "$Server" + "-" + $Scope.ScopeId + "-Reservations.csv") -NoTypeInformation
+                    Get-DhcpServerv4OptionValue -ScopeId $Scope.ScopeId -ComputerName $Server | Select-Object OptionId,Name,Type,@{Name='Value';Expression={[string]::join(";", ($_.Value))}} | Export-Csv -Path ($SavePath + "\" + "$Server" + "-" + $Scope.ScopeId + "-Options.csv") -NoTypeInformation
+                    Get-DhcpServerv4Scope -ScopeId $Scope.ScopeId -ComputerName $Server | Export-Csv -Path ($SavePath + "\" + "$Server" + "-" + $Scope.ScopeId + "-Scope.csv") -NoTypeInformation
                 }
             } catch { Write-Warning "No scopes found on: $($Server.Name)" }
         }
@@ -65,14 +62,11 @@ function Get-DHCPScopeData {
             Write-Output "Processing Scope: $($Scope.ScopeId)"
 
             # Get and export DHCP data for each scope (without server name in file name)
-            Get-DhcpServerv4ExclusionRange -ScopeId $Scope.ScopeId | Export-Csv -Path ($SavePath + "\DHCP\" + $Scope.ScopeId + "-ExcusionRange.csv") -NoTypeInformation
-            Get-DhcpServerv4Lease -ScopeId $Scope.ScopeId | Export-Csv -Path ($SavePath + "\DHCP\" + $Scope.ScopeId + "-Leases.csv") -NoTypeInformation
-            Get-DhcpServerv4Reservation -ScopeId $Scope.ScopeId | Export-Csv -Path ($SavePath + "\DHCP\" + $Scope.ScopeId + "-Reservations.csv") -NoTypeInformation
-            Get-DhcpServerv4OptionValue -ScopeId $Scope.ScopeId | Select-Object OptionId,Name,Type,@{Name=’Value’;Expression={[string]::join(“;”, ($_.Value))}}  | Export-Csv -Path ($SavePath + "\DHCP\" + $Scope.ScopeId + "-Options.csv") -NoTypeInformation
-            Get-DhcpServerv4Scope -ScopeId $Scope.ScopeId | Export-Csv -Path ($SavePath + "\DHCP\" + $Scope.ScopeId + "-Scope.csv") -NoTypeInformation
+            Get-DhcpServerv4ExclusionRange -ScopeId $Scope.ScopeId | Export-Csv -Path ($SavePath + $Scope.ScopeId + "-ExclusionRange.csv") -NoTypeInformation
+            Get-DhcpServerv4Lease -ScopeId $Scope.ScopeId | Export-Csv -Path ($SavePath + $Scope.ScopeId + "-Leases.csv") -NoTypeInformation
+            Get-DhcpServerv4Reservation -ScopeId $Scope.ScopeId | Export-Csv -Path ($SavePath + $Scope.ScopeId + "-Reservations.csv") -NoTypeInformation
+            Get-DhcpServerv4OptionValue -ScopeId $Scope.ScopeId | Select-Object OptionId,Name,Type,@{Name='Value';Expression={[string]::join(";", ($_.Value))}} | Export-Csv -Path ($SavePath + $Scope.ScopeId + "-Options.csv") -NoTypeInformation
+            Get-DhcpServerv4Scope -ScopeId $Scope.ScopeId | Export-Csv -Path ($SavePath + $Scope.ScopeId + "-Scope.csv") -NoTypeInformation
         }
     }
 }
-
-# Call the function
-Get-DHCPScopeData -All # Use -All to query all active servers, omit it to query local server only
