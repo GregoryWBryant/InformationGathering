@@ -1,22 +1,21 @@
-<#
-    .SYNOPSIS
-        Retrieves information about shared folders from enabled Windows Server machines in Active Directory and exports it to a CSV file.
-
-    .DESCRIPTION
-        This script connects to each enabled Windows Server in Active Directory, retrieves information about shared folders excluding built-in and printer shares, and exports the details (server name, share name, path, description) to a CSV file.
-
-    .PARAMETER
-        No additional parameters.
-
-    .EXAMPLE
-        Get-ShareInfo
-        Retrieves shared folder information from all enabled Windows Server machines in Active Directory and saves it to a CSV file named "Shares.csv" in the Information Gathered folder on the desktop.
-
-    .NOTES
-        The script requires the Active Directory PowerShell module and administrator privileges to retrieve share information from remote servers.
-#>
-
 function Get-ShareInfo {
+    <#
+        .SYNOPSIS
+            Retrieves information about shared folders from enabled Windows Server machines in Active Directory and exports it to a CSV file.
+
+        .DESCRIPTION
+            This script connects to each enabled Windows Server in Active Directory, retrieves information about shared folders excluding built-in and printer shares, and exports the details (server name, share name, path, description) to a CSV file.
+
+        .PARAMETER
+            No additional parameters.
+
+        .EXAMPLE
+            Get-ShareInfo
+            Retrieves shared folder information from all enabled Windows Server machines in Active Directory and saves it to a CSV file named "Shares.csv" in the Information Gathered folder on the desktop.
+
+        .NOTES
+            The script requires the Active Directory PowerShell module and administrator privileges to retrieve share information from remote servers.
+    #>
 
     # Get the path to the user's desktop
     $DesktopPath = [System.Environment]::GetFolderPath([System.Environment+SpecialFolder]::Desktop)
