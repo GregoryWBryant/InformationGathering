@@ -1,23 +1,23 @@
 <#
     .SYNOPSIS
-    Retrieves a list of active servers from Active Directory.
+        Retrieves a list of active servers from Active Directory.
 
     .DESCRIPTION
-    This script identifies active servers in Active Directory that have been logged into within the last specified number of days. 
-    The servers must be enabled and not be Windows workstation machines. 
-    The results are saved to a CSV file on the user's desktop.
+        This script identifies active servers in Active Directory that have been logged into within the last specified number of days. 
+        The servers must be enabled and not be Windows workstation machines. 
+        The results are saved to a CSV file on the user's desktop.
 
     .PARAMETER Days
-    The number of days to look back from the current date for the last logon time. 
-    Default is 60 days.
+        The number of days to look back from the current date for the last logon time. 
+        Default is 60 days.
 
     .EXAMPLE
-    PS C:\> Get-ADActiveServers -Days 90
-    Retrieves a list of active servers that have been logged into within the last 90 days 
-    and saves the information to a CSV file on the desktop.
+        Get-ADActiveServers -Days 90
+        Retrieves a list of active servers that have been logged into within the last 90 days 
+        and saves the information to a CSV file on the desktop.
 
     .NOTES
-    The script requires the Active Directory module.
+        The script requires the Active Directory module.
 #>
 
 function Get-ADActiveServers {
