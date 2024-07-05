@@ -1,22 +1,21 @@
-<#
-    .SYNOPSIS
-        Retrieves installed applications from local or remote servers and exports the data to CSV files.
-
-    .DESCRIPTION
-        This script collects information about installed applications from servers within the Active Directory domain. It retrieves data from both 32-bit and 64-bit registry keys, creates custom objects for each application, and exports the information to CSV files stored in a directory on the user's desktop or copied from remote servers.
-
-    .PARAMETER 
-        No additional parameters.
-
-    .EXAMPLE
-        Get-InstalledApplications
-        Retrieves installed applications from all enabled servers in Active Directory, including the local server, and saves the data to CSV files.
-
-    .NOTES
-        The script requires the Active Directory PowerShell module and administrator privileges on remote servers to retrieve registry information.
-#>
-
 function Get-InstalledApplications {
+    <#
+        .SYNOPSIS
+            Retrieves installed applications from local or remote servers and exports the data to CSV files.
+
+        .DESCRIPTION
+            This script collects information about installed applications from servers within the Active Directory domain. It retrieves data from both 32-bit and 64-bit registry keys, creates custom objects for each application, and exports the information to CSV files stored in a directory on the user's desktop or copied from remote servers.
+
+        .PARAMETER 
+            No additional parameters.
+
+        .EXAMPLE
+            Get-InstalledApplications
+            Retrieves installed applications from all enabled servers in Active Directory, including the local server, and saves the data to CSV files.
+
+        .NOTES
+            The script requires the Active Directory PowerShell module and administrator privileges on remote servers to retrieve registry information.
+    #>
 
     # Get the path to your desktop
     $DesktopPath = [System.Environment]::GetFolderPath([System.Environment+SpecialFolder]::Desktop)
