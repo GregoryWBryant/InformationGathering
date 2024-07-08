@@ -1,4 +1,4 @@
-﻿# Import the ImportExcel module
+﻿# Install and or Import the ImportExcel module, which is required.
 # Install-Module ImportExcel
 # Import-Module ImportExcel
 
