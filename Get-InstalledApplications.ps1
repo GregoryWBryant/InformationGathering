@@ -24,7 +24,7 @@ function Get-InstalledApplications {
     $SavePath = $DesktopPath + "\Information Gathered\"
     if (-not (Test-Path -Path $SavePath)) {
         New-Item -Path $SavePath -ItemType Directory -Force
-        }
+    }
 
     # Get the name of the computer you are running the script on
     $ComputerName = (Get-ComputerInfo).CSName
@@ -33,57 +33,64 @@ function Get-InstalledApplications {
     $Servers = Get-ADComputer -Filter {Enabled -eq $true -and OperatingSystem -like '*Windows Server*'} -Properties *
 
     # Iterate through each server in the list
-    foreach ($Server in $Servers.Name) {
+    foreach ($Server in $Servers) {
+        if (Test-Connection -ComputerName $Server.name -Quiet -Count 1) {
+            Write-Output ("Checking Server: " + $Server.name) # Informational message
 
-        # If the server is the same as the computer you are running the script on...
-        if ($Server -eq $ComputerName) {
-            $AllApplications = @() # Initialize an empty array to store application data
-            $Reg32 = "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*"  # 32-bit registry key path
-            $Reg64 = "HKLM:\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*"  # 64-bit registry key path
-            # Get installed application information from both 32-bit and 64-bit registry keys
-            $Applications = Get-ItemProperty -Path $Reg32, $Reg64 | Select-Object DisplayName, DisplayVersion, InstallDate
-        
-            # Create custom objects for each application and add to the array
-            foreach ($Application in $Applications) {
-                $NewApplication = [PSCustomObject]@{
-                    Server = $Server
-                    Name = $Application.DisplayName
-                    Version = $Application.DisplayVersion
-                    InstalledOn = $Application.InstallDate
-                    }
-                $AllApplications += $NewApplication 
-                }
+            # If the server is the same as the computer you are running the script on...
+            if ($Server.name -eq $ComputerName) {
+                $AllApplications = @() # Initialize an empty array to store application data
+                $Reg32 = "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*"  # 32-bit registry key path
+                $Reg64 = "HKLM:\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*"  # 64-bit registry key path
 
-            # Export the application information to a CSV file in the Information Gathered folder
-            $AllApplications | Export-Csv -Path ($SavePath + $ComputerName + "-Applications.csv") -NoTypeInformation
-        } else {
-            # If the server is not the same as the computer you are running the script on...
+                # Get installed application information from both 32-bit and 64-bit registry keys
+                $Applications = Get-ItemProperty -Path $Reg32, $Reg64 | Select-Object DisplayName, DisplayVersion, InstallDate
 
-            # Use Invoke-Command to run the script remotely on the server
-            Invoke-Command -ComputerName $Server {
-                $ComputerName = (Get-ComputerInfo).CSName # Get the server name
-                $AllApplications = @()
-                $Reg32 = "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*"
-                $Reg64 = "HKLM:\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*"
-                $Applications = Get-ItemProperty -Path $Reg32,$Reg64 | Select-Object DisplayName, DisplayVersion, InstallDate
-
+                # Create custom objects for each application and add to the array
                 foreach ($Application in $Applications) {
                     $NewApplication = [PSCustomObject]@{
-                        Server = $ComputerName
+                        Server = $Server.name
                         Name = $Application.DisplayName
                         Version = $Application.DisplayVersion
                         InstalledOn = $Application.InstallDate
-                        }
-                    $AllApplications += $NewApplication
                     }
-                # Export the application information to a CSV file in the C:\Temp folder on the server
-                $AllApplications | Export-Csv -Path ("C:\Temp\" + $ComputerName + "-Applications.csv") -NoTypeInformation
+                    $AllApplications += $NewApplication
                 }
-        
-            # Copy the CSV file from the server to the Information Gathered folder on your computer
-            Copy-Item -Path ("\\" + $Server + "\C$\Temp\" + $Server + "-Applications.csv") -Destination ($SavePath + $Server + "-Applications.csv")
-            # Remove the temporary CSV file from the server
-            Remove-Item -Path ("\\" + $Server + "\C$\Temp\" + $Server + "-Applications.csv") 
+
+                # Export the application information to a CSV file in the Information Gathered folder
+                $AllApplications | Export-Csv -Path ($SavePath + $ComputerName + "-Applications.csv") -NoTypeInformation
+            } else {
+                # If the server is not the same as the computer you are running the script on...
+
+                # Use Invoke-Command to run the script remotely on the server
+                Invoke-Command -ComputerName $Server.name {
+                    $ComputerName = (Get-ComputerInfo).CSName # Get the server name
+                    $AllApplications = @()
+                    $Reg32 = "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*"
+                    $Reg64 = "HKLM:\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*"
+                    $Applications = Get-ItemProperty -Path $Reg32, $Reg64 | Select-Object DisplayName, DisplayVersion, InstallDate
+
+                    foreach ($Application in $Applications) {
+                        $NewApplication = [PSCustomObject]@{
+                            Server = $ComputerName
+                            Name = $Application.DisplayName
+                            Version = $Application.DisplayVersion
+                            InstalledOn = $Application.InstallDate
+                        }
+                        $AllApplications += $NewApplication
+                    }
+
+                    # Export the application information to a CSV file in the C:\Temp folder on the server
+                    $AllApplications | Export-Csv -Path ("C:\Temp\" + $ComputerName + "-Applications.csv") -NoTypeInformation
+                }
+
+                # Copy the CSV file from the server to the Information Gathered folder on your computer
+                Copy-Item -Path ("\\" + $Server.name + "\C$\Temp\" + $Server.name + "-Applications.csv") -Destination ($SavePath + $Server.name + "-Applications.csv")
+                # Remove the temporary CSV file from the server
+                Remove-Item -Path ("\\" + $Server.name + "\C$\Temp\" + $Server.name + "-Applications.csv")
             }
+        } else {
+            Write-Output ("Can't reach: " + $Server.Name)  # Output message for offline servers
         }
+    }
 }
