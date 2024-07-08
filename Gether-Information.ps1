@@ -741,7 +741,7 @@ function Get-ShareInfo {
     foreach ($Server in $Servers) {
         # Test if the server is reachable
         if (Test-Connection -ComputerName $Server.Name -Quiet -Count 1) {  # Using -Quiet for cleaner output
-            Write-Output "Checking Server: $Server.Name" # Informational message
+            Write-Output ("Checking Server: " + $Server.Name) # Informational message
             # Create a CIM session to the remote server
             $Cim = New-CimSession -ComputerName $Server.Name 
             # Get shared folders, excluding built-in and printer shares
@@ -764,7 +764,7 @@ function Get-ShareInfo {
                 $SharesData += $NewShare 
                 }
             } else {
-                Write-Output "$($Server.Name) is not online"  # Output message for offline servers
+                Write-Output ("Can't reach: " + $Server.Name)  # Output message for offline servers
                 }
         }
 
