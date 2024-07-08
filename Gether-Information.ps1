@@ -27,6 +27,8 @@
         Gets Installed Application list from all Servers in AD
     Get-Printers
         Gets a list of all Printers from all Servers in AD
+    Get-RolesInstalled 
+        Gets a list of all Roles installed from All Servers in AD
     Get-ShareInfo
         Gets a list of all Shares from all Servers in AD
 
@@ -598,60 +600,68 @@ function Get-InstalledApplications {
     $Servers = Get-ADComputer -Filter {Enabled -eq $true -and OperatingSystem -like '*Windows Server*'} -Properties *
 
     # Iterate through each server in the list
-    foreach ($Server in $Servers.Name) {
+    foreach ($Server in $Servers) {
+        if (Test-Connection -ComputerName $Server.name -Quiet -Count 1) {
+            Write-Output ("Checking Server: " + $Server.name) # Informational message
 
-        # If the server is the same as the computer you are running the script on...
-        if ($Server -eq $ComputerName) {
-            $AllApplications = @() # Initialize an empty array to store application data
-            $Reg32 = "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*"  # 32-bit registry key path
-            $Reg64 = "HKLM:\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*"  # 64-bit registry key path
-            # Get installed application information from both 32-bit and 64-bit registry keys
-            $Applications = Get-ItemProperty -Path $Reg32, $Reg64 | Select-Object DisplayName, DisplayVersion, InstallDate
-        
-            # Create custom objects for each application and add to the array
-            foreach ($Application in $Applications) {
-                $NewApplication = [PSCustomObject]@{
-                    Server = $Server
-                    Name = $Application.DisplayName
-                    Version = $Application.DisplayVersion
-                    InstalledOn = $Application.InstallDate
-                    }
-                $AllApplications += $NewApplication 
-                }
+            # If the server is the same as the computer you are running the script on...
+            if ($Server.name -eq $ComputerName) {
+                $AllApplications = @() # Initialize an empty array to store application data
+                $Reg32 = "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*"  # 32-bit registry key path
+                $Reg64 = "HKLM:\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*"  # 64-bit registry key path
 
-            # Export the application information to a CSV file in the Information Gathered folder
-            $AllApplications | Export-Csv -Path ($SavePath + $ComputerName + "-Applications.csv") -NoTypeInformation
-        } else {
-            # If the server is not the same as the computer you are running the script on...
+                # Get installed application information from both 32-bit and 64-bit registry keys
+                $Applications = Get-ItemProperty -Path $Reg32, $Reg64 | Select-Object DisplayName, DisplayVersion, InstallDate
 
-            # Use Invoke-Command to run the script remotely on the server
-            Invoke-Command -ComputerName $Server {
-                $ComputerName = (Get-ComputerInfo).CSName # Get the server name
-                $AllApplications = @()
-                $Reg32 = "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*"
-                $Reg64 = "HKLM:\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*"
-                $Applications = Get-ItemProperty -Path $Reg32,$Reg64 | Select-Object DisplayName, DisplayVersion, InstallDate
-
+                # Create custom objects for each application and add to the array
                 foreach ($Application in $Applications) {
                     $NewApplication = [PSCustomObject]@{
-                        Server = $ComputerName
+                        Server = $Server.name
                         Name = $Application.DisplayName
                         Version = $Application.DisplayVersion
                         InstalledOn = $Application.InstallDate
-                        }
-                    $AllApplications += $NewApplication
                     }
-                # Export the application information to a CSV file in the C:\Temp folder on the server
-                $AllApplications | Export-Csv -Path ("C:\Temp\" + $ComputerName + "-Applications.csv") -NoTypeInformation
+                    $AllApplications += $NewApplication
                 }
-        
-            # Copy the CSV file from the server to the Information Gathered folder on your computer
-            Copy-Item -Path ("\\" + $Server + "\C$\Temp\" + $Server + "-Applications.csv") -Destination ($SavePath + $Server + "-Applications.csv")
-            # Remove the temporary CSV file from the server
-            Remove-Item -Path ("\\" + $Server + "\C$\Temp\" + $Server + "-Applications.csv") 
+
+                # Export the application information to a CSV file in the Information Gathered folder
+                $AllApplications | Export-Csv -Path ($SavePath + $ComputerName + "-Applications.csv") -NoTypeInformation
+            } else {
+                # If the server is not the same as the computer you are running the script on...
+
+                # Use Invoke-Command to run the script remotely on the server
+                Invoke-Command -ComputerName $Server.name {
+                    $ComputerName = (Get-ComputerInfo).CSName # Get the server name
+                    $AllApplications = @()
+                    $Reg32 = "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*"
+                    $Reg64 = "HKLM:\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*"
+                    $Applications = Get-ItemProperty -Path $Reg32, $Reg64 | Select-Object DisplayName, DisplayVersion, InstallDate
+
+                    foreach ($Application in $Applications) {
+                        $NewApplication = [PSCustomObject]@{
+                            Server = $ComputerName
+                            Name = $Application.DisplayName
+                            Version = $Application.DisplayVersion
+                            InstalledOn = $Application.InstallDate
+                        }
+                        $AllApplications += $NewApplication
+                    }
+
+                    # Export the application information to a CSV file in the C:\Temp folder on the server
+                    $AllApplications | Export-Csv -Path ("C:\Temp\" + $ComputerName + "-Applications.csv") -NoTypeInformation
+                }
+
+                # Copy the CSV file from the server to the Information Gathered folder on your computer
+                Copy-Item -Path ("\\" + $Server.name + "\C$\Temp\" + $Server.name + "-Applications.csv") -Destination ($SavePath + $Server.name + "-Applications.csv")
+                # Remove the temporary CSV file from the server
+                Remove-Item -Path ("\\" + $Server.name + "\C$\Temp\" + $Server.name + "-Applications.csv")
             }
+        } else {
+            Write-Output ("Can't reach: " + $Server.Name)  # Output message for offline servers
         }
+    }
 }
+
 
 function Get-Printers {
     <#
@@ -714,6 +724,54 @@ function Get-Printers {
     $AllPrinters | Export-Csv -Path ($SavePath + "Printers.csv") -NoTypeInformation
 }
 
+function Get-RolesInstalled {
+    <#
+        .SYNOPSIS
+            Retrieves the installed Windows Server roles on all enabled servers in Active Directory.
+
+        .DESCRIPTION
+            This script queries all enabled servers in Active Directory that are running a version of Windows Server.
+            It checks if each server is reachable, then retrieves and records the installed roles on each server.
+            The results are saved to a CSV file on the user's desktop.
+
+        .PARAMETER None
+            This function does not take any parameters.
+
+        .EXAMPLE
+            Get-RolesInstalled
+            Runs the function and exports the installed roles on all reachable servers to a CSV file.
+
+        .NOTES
+            This function assumes the script is running on a Windows environment where PowerShell can access the desktop path using .NET Framework.
+    #>
+
+    # Get all enabled servers in Active Directory
+    $Servers = Get-ADComputer -Filter {enabled -eq $true -and OperatingSystem -like '*Windows Server*'} -Properties *
+    $RolesData = @()
+
+    # Iterate through each server
+    foreach ($Server in $Servers) {
+        # Test if the server is reachable
+        if (Test-Connection -ComputerName $Server.Name -Quiet -Count 1) {
+            Write-Output ("Checking Server: " + $Server.Name) # Informational message
+            $Roles = Get-WindowsFeature -ComputerName $Server.Name | Where-Object { $_.installstate -eq "installed" -and $_.FeatureType -eq "Role" }
+            foreach ($Role in $Roles) {
+                $NewRole = [PSCustomObject]@{
+                    Server = $Server.Name
+                    Name = $Role.DisplayName
+                }
+                $RolesData += $NewRole
+            }
+        } else {
+            Write-Output ("Can't reach: " + $Server.Name)  # Output message for offline servers
+        }
+    }
+
+    # Export the collected role data to a CSV file
+    $RolesData | Export-Csv -Path ($SavePath + "Roles.csv") -NoTypeInformation
+}
+
+
 function Get-ShareInfo {
     <#
         .SYNOPSIS
@@ -740,7 +798,7 @@ function Get-ShareInfo {
     # Iterate through each server
     foreach ($Server in $Servers) {
         # Test if the server is reachable
-        if (Test-Connection -ComputerName $Server.Name -Quiet -Count 1) {  # Using -Quiet for cleaner output
+        if (Test-Connection -ComputerName $Server.Name -Quiet -Count 1) {
             Write-Output ("Checking Server: " + $Server.Name) # Informational message
             # Create a CIM session to the remote server
             $Cim = New-CimSession -ComputerName $Server.Name 
