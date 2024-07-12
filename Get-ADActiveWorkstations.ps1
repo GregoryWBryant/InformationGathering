@@ -1,27 +1,27 @@
 function Get-ADActiveWorkstations {
     <#
         .SYNOPSIS
-        Retrieves a list of active workstations from Active Directory.
+            Retrieves a list of active workstations from Active Directory.
 
         .DESCRIPTION
-        This script identifies active workstations in Active Directory that have been logged into within the last specified number of days. 
-        The workstations must be enabled and not be Windows Server machines. 
-        The results are saved to a CSV file on the user's desktop.
+            This script identifies active workstations in Active Directory that have been logged into within the last specified number of days. 
+            The workstations must be enabled and not be Windows Server machines. 
+            The results are saved to a CSV file on the user's desktop.
 
         .PARAMETER Days
-        The number of days to look back from the current date for the last logon time. 
-        Default is 60 days.
+            The number of days to look back from the current date for the last logon time. 
+            Default is 90 days.
 
         .EXAMPLE
             Get-ADActiveWorkstations -Days 90
-        Retrieves a list of active workstations that have been logged into within the last 90 days 
-        and saves the information to a CSV file on the desktop.
+            Retrieves a list of active workstations that have been logged into within the last 90 days 
+            and saves the information to a CSV file on the desktop.
 
         .NOTES
-        The script requires the Active Directory module.
+            The script requires the Active Directory module.
     #>
     param (
-        [int]$Days = 60
+        [int]$Days = 90
     )
 
     # Get the path to the user's desktop
