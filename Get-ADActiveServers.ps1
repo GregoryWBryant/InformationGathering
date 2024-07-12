@@ -10,7 +10,7 @@ function Get-ADActiveServers {
 
         .PARAMETER Days
             The number of days to look back from the current date for the last logon time. 
-            Default is 60 days.
+            Default is 90 days.
 
         .EXAMPLE
             Get-ADActiveServers -Days 90
@@ -21,7 +21,7 @@ function Get-ADActiveServers {
             Function requires the Active Directory module.
 #>
     param (
-        [int]$Days = 60
+        [int]$Days = 90
     )
 
     # Get the path to the user's desktop
