@@ -10,11 +10,11 @@ function Get-ADInactiveServers {
 
         .PARAMETER Days
             The number of days to look back from the current date for the last logon time. 
-            Default is 60 days.
+            Default is 90 days.
 
         .EXAMPLE
-            Get-ADInactiveServers -Days 90
-            Retrieves a list of inactive servers that have not been logged into within the last 90 days 
+            Get-ADInactiveServers -Days 30
+            Retrieves a list of inactive servers that have not been logged into within the last 30 days 
             and saves the information to a CSV file on the desktop.
 
         .NOTES
@@ -22,7 +22,7 @@ function Get-ADInactiveServers {
     #>
 
     param (
-        [int]$Days = 60
+        [int]$Days = 90
     )
 
     # Get the path to the user's desktop
