@@ -10,11 +10,11 @@ function Get-ADInactiveWorkstations {
 
         .PARAMETER Days
             The number of days to look back from the current date for the last logon time. 
-            Default is 60 days.
+            Default is 90 days.
 
         .EXAMPLE
-            Get-ADInactiveWorkstations -Days 90
-            Retrieves a list of inactive workstations that have been logged into within the last 90 days 
+            Get-ADInactiveWorkstations -Days 30
+            Retrieves a list of inactive workstations that have been logged into within the last 30 days 
             and saves the information to a CSV file on the desktop.
 
         .NOTES
@@ -22,7 +22,7 @@ function Get-ADInactiveWorkstations {
     #>
 
     param (
-        [int]$Days = 60
+        [int]$Days = 90
     )
 
     # Get the path to the user's desktop
