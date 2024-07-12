@@ -1,41 +1,9 @@
 <#
-
     This is a collection of all the scripts for collectiong information.
-    Once ran you can run any of the following functions.
-
-    Create-DesktopINformationGathered
-        Automatically ran when running script as it is required prior to any function.
-    Get-ACLs
-        Must provide a path for the location of folders to get ACLs of
-    Get-ADActiveServers
-        Gets all Active Servers, by default any server that has checked in with AD in the last 60 days. Can provide -Day to change default
-    Get-ADActiveWorkstations
-        Gets all Active Workstations, by default any server that has checked in with AD in the last 60 days. Can provide -Day to change default
-    Get-ADDisabledUsers
-        Gets all disabled users
-    Get-ADEnabledUsers
-        Gets all Active users
-    Get-ADInactiveServers
-        Gets all Inctive Servers, by default any server that has not checked in with AD in the last 60 days. Can provide -Day to change default
-    Get-ADInactiveWorkstations
-        Gets all Inactive Workstations, by default any server that has not checked in with AD in the last 60 days. Can provide -Day to change default
-    Get-DFSNameSpaces
-        Gets all DFS Name spaces and their targets
-    Get-DHCPScopeData
-        Gets DHCP Scope information from Current servers or all Servers in Active Directory. -All switch used to get information from all servers.
-    Get-InstalledApplications
-        Gets Installed Application list from all Servers in AD
-    Get-Printers
-        Gets a list of all Printers from all Servers in AD
-    Get-RolesInstalled 
-        Gets a list of all Roles installed from All Servers in AD
-    Get-ShareInfo
-        Gets a list of all Shares from all Servers in AD
-
 #>
 
 
-function Create-DesktopINformationGathered {
+function Create-DesktopInformationGathered {
     <#
         .SYNOPSIS
             Creates the folder structure on the desktop for storing gathered information.
@@ -57,7 +25,7 @@ function Create-DesktopINformationGathered {
     # Gets the Desktop folder path
     $DesktopPath = [System.Environment]::GetFolderPath([System.Environment+SpecialFolder]::Desktop)
     # Creates the output folder path by combining Desktop path and "Information Gathered" subfolder
-    $SavePath = $DesktopPath + "\Information Gathered\"
+    $global:SavePath = $DesktopPath + "\Information Gathered\"
     # Checks if the output folder exists. If not, creates it (Force parameter ensures overwriting if it already exists)
     if (!(Test-Path -Path $SavePath)) {
         New-Item -Path $SavePath -ItemType Directory -Force
@@ -100,7 +68,7 @@ function Get-ACLsFolders {
             This example retrieves the ACLs for all folders and subfolders within the "C:\MyDocuments" directory.
 
         .Notes
-            Should be ran as Administrator for best results.
+            Should be ran ad Administrator for best results.
     #>
 
     param (
@@ -110,6 +78,7 @@ function Get-ACLsFolders {
     )
 
     $Report = @()
+
     # Determines how to get folders based on the Recursive parameter
     if ($Recursive) {
         # Gets all directories recursively (including subfolders) in the specified path, excluding some predefined folders for efficiency
@@ -137,7 +106,6 @@ function Get-ACLsFolders {
     $Report | Export-Csv -path ( $SavePath + "FolderPermissions.csv") -NoTypeInformation
 }
 
-
 function Get-ADActiveServers {
     <#
         .SYNOPSIS
@@ -150,7 +118,7 @@ function Get-ADActiveServers {
 
         .PARAMETER Days
             The number of days to look back from the current date for the last logon time. 
-            Default is 60 days.
+            Default is 90 days.
 
         .EXAMPLE
             Get-ADActiveServers -Days 90
@@ -158,11 +126,14 @@ function Get-ADActiveServers {
             and saves the information to a CSV file on the desktop.
 
         .NOTES
-            The script requires the Active Directory module.
-    #>
+            Function requires the Active Directory module.
+#>
     param (
-        [int]$Days = 60
+        [int]$Days = 90
     )
+
+    # Import the Active Directory PowerShell module
+    Import-Module ActiveDirectory
 
     # Calculate the date for the specified number of days ago
     $time = (Get-Date).AddDays(-$Days)
@@ -176,28 +147,31 @@ function Get-ADActiveServers {
 function Get-ADActiveWorkstations {
     <#
         .SYNOPSIS
-        Retrieves a list of active workstations from Active Directory.
+            Retrieves a list of active workstations from Active Directory.
 
         .DESCRIPTION
-        This script identifies active workstations in Active Directory that have been logged into within the last specified number of days. 
-        The workstations must be enabled and not be Windows Server machines. 
-        The results are saved to a CSV file on the user's desktop.
+            This script identifies active workstations in Active Directory that have been logged into within the last specified number of days. 
+            The workstations must be enabled and not be Windows Server machines. 
+            The results are saved to a CSV file on the user's desktop.
 
         .PARAMETER Days
-        The number of days to look back from the current date for the last logon time. 
-        Default is 60 days.
+            The number of days to look back from the current date for the last logon time. 
+            Default is 90 days.
 
         .EXAMPLE
             Get-ADActiveWorkstations -Days 90
-        Retrieves a list of active workstations that have been logged into within the last 90 days 
-        and saves the information to a CSV file on the desktop.
+            Retrieves a list of active workstations that have been logged into within the last 90 days 
+            and saves the information to a CSV file on the desktop.
 
         .NOTES
-        Function requires the Active Directory module.
+            The script requires the Active Directory module.
     #>
     param (
-        [int]$Days = 60
+        [int]$Days = 90
     )
+
+    # Import the Active Directory PowerShell module
+    Import-Module ActiveDirectory
 
     # Calculate the date for the specified number of days ago
     $time = (Get-Date).AddDays(-$Days)
@@ -206,6 +180,70 @@ function Get-ADActiveWorkstations {
     Get-ADComputer -Filter {LastLogonDate -gt $time -and Enabled -eq $true -and OperatingSystem -notlike '*Windows Server*'} -Properties * |
         Select Name,LastLogonDate,OperatingSystem |
         Export-Csv ($SavePath + "ActiveWorkstations.csv") -NoTypeInformation
+}
+
+function Get-ADAllGroupMemberships {
+    <#
+        .SYNOPSIS
+            Retrieves all members of all security groups in Active Directory and saves the information to a CSV file on the user's desktop.
+
+        .DESCRIPTION
+            This script queries all groups in Active Directory and retrieves their members. The gathered information includes the group name, category, scope, member name, and member class.
+            The results are then exported to a CSV file on the user's desktop.
+
+        .PARAMETER
+            No additional parameters are required for this function.
+
+        .EXAMPLE
+            Get-ADAllGroupMemberships
+
+        .NOTES
+            The script requires the Active Directory PowerShell module.
+            Ensure you have the necessary permissions to read group memberships in Active Directory.
+    #>
+
+    # Initialize an array to store group information
+    $AllGroups = @()
+
+    # Get all security groups in Active Directory
+    $Groups = Get-ADGroup -Filter *
+
+    foreach ($Group in $Groups) {
+        try {
+            # Get members of the group
+            $Members = Get-ADGroupMember -Identity $Group.DistinguishedName
+
+            if ($Members.Count -eq 0) {
+                # Handle empty groups
+                $GroupInfo = [PSCustomObject] @{
+                    GroupName     = $Group.Name
+                    GroupCategory = $Group.GroupCategory
+                    GroupScope    = $Group.GroupScope
+                    MemberName    = "Empty"
+                    MemberClass   = "NA"
+                }
+                $AllGroups += $GroupInfo
+            } else {
+                foreach ($Member in $Members) {
+                    # Create a custom object for each member's group info
+                    $GroupInfo = [PSCustomObject] @{
+                        GroupName     = $Group.Name
+                        GroupCategory = $Group.GroupCategory
+                        GroupScope    = $Group.GroupScope
+                        MemberName    = $Member.Name
+                        MemberClass   = $Member.objectClass
+                    }
+                    # Add the group info to the array
+                    $AllGroups += $GroupInfo
+                }
+            }
+        } catch {
+            Write-Output ("Unable to get members of: " + $Group.Name)
+        }
+    }
+
+    # Export the collected group data to a CSV file
+    $AllGroups | Export-Csv -Path (Join-Path -Path $SavePath -ChildPath "AllGroupsMemberShips.csv") -NoTypeInformation
 }
 
 function Get-ADDisabledUsers {
@@ -226,7 +264,7 @@ function Get-ADDisabledUsers {
             Retrieves information about Disabled users in Active Directory and saves it to a CSV file on the desktop.
 
         .NOTES
-            Function requires the Active Directory PowerShell module.
+            The script requires the Active Directory PowerShell module.
     #>
 
     # Initialize an empty array to store user objects
@@ -312,7 +350,7 @@ function Get-ADEnabledUsers {
             Retrieves information about enabled users in Active Directory and saves it to a CSV file on the desktop.
 
         .NOTES
-            Function requires the Active Directory PowerShell module.
+            The script requires the Active Directory PowerShell module.
     #>
 
     # Initialize an empty array to store user objects
@@ -392,20 +430,23 @@ function Get-ADInactiveServers {
 
         .PARAMETER Days
             The number of days to look back from the current date for the last logon time. 
-            Default is 60 days.
+            Default is 90 days.
 
         .EXAMPLE
-            Get-ADInactiveServers -Days 90
-            Retrieves a list of inactive servers that have not been logged into within the last 90 days 
+            Get-ADInactiveServers -Days 30
+            Retrieves a list of inactive servers that have not been logged into within the last 30 days 
             and saves the information to a CSV file on the desktop.
 
         .NOTES
-            Function requires the Active Directory module.
+            The script requires the Active Directory module.
     #>
 
     param (
-        [int]$Days = 60
+        [int]$Days = 90
     )
+
+    # Import the Active Directory PowerShell module
+    Import-Module ActiveDirectory
 
     # Calculate the date for the specified number of days ago
     $time = (Get-Date).AddDays(-$Days)
@@ -428,20 +469,23 @@ function Get-ADInactiveWorkstations {
 
         .PARAMETER Days
             The number of days to look back from the current date for the last logon time. 
-            Default is 60 days.
+            Default is 90 days.
 
         .EXAMPLE
-            Get-ADInactiveWorkstations -Days 90
-            Retrieves a list of inactive workstations that have been logged into within the last 90 days 
+            Get-ADInactiveWorkstations -Days 30
+            Retrieves a list of inactive workstations that have been logged into within the last 30 days 
             and saves the information to a CSV file on the desktop.
 
         .NOTES
-            Function requires the Active Directory module.
+            The script requires the Active Directory module.
     #>
 
     param (
-        [int]$Days = 60
+        [int]$Days = 90
     )
+
+    # Import the Active Directory PowerShell module
+    Import-Module ActiveDirectory
 
     # Calculate the date for the specified number of days ago
     $time = (Get-Date).AddDays(-$Days)
@@ -469,7 +513,7 @@ function Get-DFSNameSpaces {
             Retrieves DFS Namespace and target information and saves the information to a CSV file on the desktop.
 
         .NOTES
-            Function requires DFS be installed on the local device.
+            The script requires DFS be installed on the local device.
     #>
 
     # Get all DFS Namespace roots in the current domain
@@ -519,7 +563,7 @@ function Get-DHCPScopeData {
             This script collects detailed DHCP scope information, including exclusion ranges, leases, reservations, option values, and scope details from specified DHCP servers. The data is exported to CSV files stored in a directory on the user's desktop.
 
         .PARAMETER All
-            When specified, retrieves DHCP scope data from all active servers within the specified timeframe. Otherwise, retrieves data from the local server.
+            When specified, retrieves DHCP scope data from all enabled Searvers that are reachable. Otherwise, retrieves data from the local server.
 
         .EXAMPLE
             Get-DHCPScopeData
@@ -529,49 +573,48 @@ function Get-DHCPScopeData {
             Retrieves DHCP scope data from all active servers within the specified timeframe and saves it to CSV files.
 
         .NOTES
-            Function requires the DHCP Server PowerShell module.
+            The script requires the DHCP Server PowerShell module.
     #>
 
     param(
         [switch]$All
     )
 
-    $Time = (Get-Date).AddDays(-(30)) # Modify to your desired timeframe
+    # Get the path to the user's desktop
+    $DesktopPath = [System.Environment]::GetFolderPath([System.Environment+SpecialFolder]::Desktop)
 
-    if ($All) {
-        # Get all active servers
-        $Servers = Get-ADComputer -Filter {LastLogonDate -gt $Time -and Enabled -eq $true -and OperatingSystem -like '*Windows Server*'} -Properties *
+    # Create the save path for the CSV files
+    $DHCPPath = $SavePath + "DHCP\"
+    if (-not (Test-Path -Path $DHCPPath)) {
+        New-Item -Path $DHCPPath -ItemType Directory -Force
+    }
 
-        foreach ($Server in $Servers) {
+    # Get the name of the computer you are running the script on
+    $ComputerName = [System.Environment]::MachineName
+
+    # Get a list of all enabled servers in Active Directory
+    $Servers = Get-ADComputer -Filter {Enabled -eq $true -and OperatingSystem -like '*Windows Server*'} -Properties *
+
+    if (!($All)) {
+        $Servers = $Servers | Where-Object {$_.Name -eq $ComputerName}
+    }
+
+    foreach ($Server in $Servers) {
+        if (Test-Connection -ComputerName $Server.Name -Quiet -Count 1) {
             try {
                 $Scopes = Get-DhcpServerv4Scope -ComputerName $Server.Name
                 foreach ($Scope in $Scopes) {
                     Write-Output "Processing Server: $($Server.Name), Scope: $($Scope.ScopeId)"
-
                     # Get and export DHCP data for each scope (with server name in file name)
-                    Get-DhcpServerv4ExclusionRange -ScopeId $Scope.ScopeId -ComputerName $Server.name | Export-Csv -Path ($SavePath + "\" + $Server.name + "-" + $Scope.ScopeId + "-ExclusionRange.csv") -NoTypeInformation
-                    Get-DhcpServerv4Lease -ScopeId $Scope.ScopeId -ComputerName $Server.name | Export-Csv -Path ($SavePath + "\" + $Server.name + "-" + $Scope.ScopeId + "-Leases.csv") -NoTypeInformation
-                    Get-DhcpServerv4Reservation -ScopeId $Scope.ScopeId -ComputerName $Server.name | Export-Csv -Path ($SavePath + "\" + $Server.name + "-" + $Scope.ScopeId + "-Reservations.csv") -NoTypeInformation
-                    Get-DhcpServerv4OptionValue -ScopeId $Scope.ScopeId -ComputerName $Server.name | Select-Object OptionId,Name,Type,@{Name='Value';Expression={[string]::join(";", ($_.Value))}} | Export-Csv -Path ($SavePath + "\" + $Server.name + "-" + $Scope.ScopeId + "-Options.csv") -NoTypeInformation
-                    Get-DhcpServerv4Scope -ScopeId $Scope.ScopeId -ComputerName $Server.name | Export-Csv -Path ($SavePath + "\" + $Server.name+ "-" + $Scope.ScopeId + "-Scope.csv") -NoTypeInformation
-                }
-            } catch { Write-Warning "No scopes found on: $($Server.Name)" }
+                    Get-DhcpServerv4ExclusionRange -ScopeId $Scope.ScopeId -ComputerName $Server.name | Export-Csv -Path ($DHCPPath + "\" + $Server.name + "-" + $Scope.ScopeId + "-ExclusionRange.csv") -NoTypeInformation
+                    Get-DhcpServerv4Lease -ScopeId $Scope.ScopeId -ComputerName $Server.name | Export-Csv -Path ($DHCPPath + "\" + $Server.name + "-" + $Scope.ScopeId + "-Leases.csv") -NoTypeInformation
+                    Get-DhcpServerv4Reservation -ScopeId $Scope.ScopeId -ComputerName $Server.name | Export-Csv -Path ($DHCPPath + "\" + $Server.name + "-" + $Scope.ScopeId + "-Reservations.csv") -NoTypeInformation
+                    Get-DhcpServerv4OptionValue -ScopeId $Scope.ScopeId -ComputerName $Server.name | Select-Object OptionId,Name,Type,@{Name='Value';Expression={[string]::join(";", ($_.Value))}} | Export-Csv -Path ($DHCPPath + "\" + $Server.name + "-" + $Scope.ScopeId + "-Options.csv") -NoTypeInformation
+                    Get-DhcpServerv4Scope -ScopeId $Scope.ScopeId -ComputerName $Server.name | Export-Csv -Path ($DHCPPath + "\" + $Server.name+ "-" + $Scope.ScopeId + "-Scope.csv") -NoTypeInformation
+                    }
+                } catch { Write-Warning "No scopes found on: $($Server.Name)" }
+            } else { Write-Output ("Can't Reach: " + $Server.Name) }
         }
-    } else {
-        # Get DHCP reservations for the local server
-        $Scopes = Get-DhcpServerv4Scope
-
-        foreach ($Scope in $Scopes) {
-            Write-Output "Processing Scope: $($Scope.ScopeId)"
-
-            # Get and export DHCP data for each scope (without server name in file name)
-            Get-DhcpServerv4ExclusionRange -ScopeId $Scope.ScopeId | Export-Csv -Path ($SavePath + "\DHCP\" + $Scope.ScopeId + "-ExclusionRange.csv") -NoTypeInformation
-            Get-DhcpServerv4Lease -ScopeId $Scope.ScopeId | Export-Csv -Path ($SavePath + "\DHCP\" + $Scope.ScopeId + "-Leases.csv") -NoTypeInformation
-            Get-DhcpServerv4Reservation -ScopeId $Scope.ScopeId | Export-Csv -Path ($SavePath + "\DHCP\" + $Scope.ScopeId + "-Reservations.csv") -NoTypeInformation
-            Get-DhcpServerv4OptionValue -ScopeId $Scope.ScopeId | Select-Object OptionId,Name,Type,@{Name='Value';Expression={[string]::join(";", ($_.Value))}} | Export-Csv -Path ($SavePath + "\DHCP\" + $Scope.ScopeId + "-Options.csv") -NoTypeInformation
-            Get-DhcpServerv4Scope -ScopeId $Scope.ScopeId | Export-Csv -Path ($SavePath + "\DHCP\" + $Scope.ScopeId + "-Scope.csv") -NoTypeInformation
-        }
-    }
 }
 
 function Get-InstalledApplications {
@@ -582,22 +625,33 @@ function Get-InstalledApplications {
         .DESCRIPTION
             This script collects information about installed applications from servers within the Active Directory domain. It retrieves data from both 32-bit and 64-bit registry keys, creates custom objects for each application, and exports the information to CSV files stored in a directory on the user's desktop or copied from remote servers.
 
-        .PARAMETER 
-            No additional parameters.
+        .PARAMETER All
+            When specified, retrieves DHCP scope data from all enabled Searvers that are reachable. Otherwise, retrieves data from the local server.
 
         .EXAMPLE
             Get-InstalledApplications
+            Retrieves installed applications from the local server and saves it to CSV files.
+
+            Get-InstalledApplications -All
             Retrieves installed applications from all enabled servers in Active Directory, including the local server, and saves the data to CSV files.
 
         .NOTES
             The script requires the Active Directory PowerShell module and administrator privileges on remote servers to retrieve registry information.
     #>
 
+    param(
+        [switch]$All
+    )
+
     # Get the name of the computer you are running the script on
-    $ComputerName = (Get-ComputerInfo).CSName
+    $ComputerName = [System.Environment]::MachineName
 
     # Get a list of all enabled servers in Active Directory
     $Servers = Get-ADComputer -Filter {Enabled -eq $true -and OperatingSystem -like '*Windows Server*'} -Properties *
+
+    if (!($All)) {
+        $Servers = $Servers | Where-Object {$_.Name -eq $ComputerName}
+    }
 
     # Iterate through each server in the list
     foreach ($Server in $Servers) {
@@ -657,11 +711,10 @@ function Get-InstalledApplications {
                 Remove-Item -Path ("\\" + $Server.name + "\C$\Temp\" + $Server.name + "-Applications.csv")
             }
         } else {
-            Write-Output ("Can't reach: " + $Server.Name)  # Output message for offline servers
+            Write-Output ("Can't reach: " + $Server.Name)
         }
     }
 }
-
 
 function Get-Printers {
     <#
@@ -671,19 +724,34 @@ function Get-Printers {
         .DESCRIPTION
             This script retrieves printer details including server name, printer name, driver name, driver type, port name, port IP address, device URL, and status from Windows Server machines. It uses PowerShell cmdlets such as Get-Printer and Get-PrinterPort to gather this information.
 
-        .PARAMETER
-            No additional parameters.
+        .PARAMETER All
+            When specified, retrieves DHCP scope data from all enabled Searvers that are reachable. Otherwise, retrieves data from the local server.
 
         .EXAMPLE
             Get-Printers
+            Retrieves printer information from the local server and saves it to CSV files.
+
+            Get-Printers -All
             Retrieves printer information from all enabled Windows Server machines in Active Directory and saves it to a CSV file named "Printers.csv" in the Information Gathered folder on the desktop.
 
         .NOTES
             The script requires the Active Directory PowerShell module and administrator privileges to retrieve printer information from remote servers.
     #>
 
-    # Get all enabled servers in Active Directory
-    $Servers = Get-ADComputer -Filter {enabled -eq $true -and OperatingSystem -like '*Windows Server*'} -Properties *
+    param(
+        [switch]$All
+    )
+
+    # Get the name of the computer you are running the script on
+    $ComputerName = [System.Environment]::MachineName
+
+    # Get a list of all enabled servers in Active Directory
+    $Servers = Get-ADComputer -Filter {Enabled -eq $true -and OperatingSystem -like '*Windows Server*'} -Properties *
+
+    if (!($All)) {
+        $Servers = $Servers | Where-Object {$_.Name -eq $ComputerName}
+    }
+
     # Initialize an array to store printer information
     $AllPrinters = @()
 
@@ -692,15 +760,17 @@ function Get-Printers {
         # Test if the server is reachable using Test-Connection
         if (Test-Connection -ComputerName $Server.Name -Quiet -Count 1) {  # Using -Quiet for cleaner output
             $Name = $Server.Name
-            Write-Output "Checking Server: $Name"
+            Write-Output ("Checking Server:" + $Name)
 
             # Get all printers on the server
             $Printers = Get-Printer -ComputerName $Name
 
             # Iterate through each printer on the server
             foreach ($Printer in $Printers) {
+                Write-Output ("Checking: " + $Printer.Name)
                 # Get driver information for the printer
                 $Driver = Get-PrinterDriver -Name $Printer.DriverName -ComputerName $Name
+                $PortInformation = Get-PrinterPort -name $Printer[0].PortName -ComputerName $Name
 
                 # Create a custom object to store printer details
                 $NewPrinter = [PSCustomObject]@{
@@ -709,15 +779,15 @@ function Get-Printers {
                     "Driver Name" = $Printer[0].DriverName
                     "Driver Type" = $Driver[0].MajorVersion
                     "Port Name" = $Printer[0].PortName
-                    "Port IP" = (Get-PrinterPort -name $Printer[0].PortName).printerhostaddress # This property provides the IP of the port
-                    "Device URL" = (Get-PrinterPort -name $Printer[0].PortName -computername $Name).DeviceURL # This property provides the IP of WSD ports.
+                    "Port IP" = $PortInformation.printerhostaddress
+                    "Device URL" = $PortInformation.DeviceURL
                     "Status" = $Printer[0].PrinterStatus
                     }
                 # Add the printer object to the overall list
                 $AllPrinters += $NewPrinter
                 }
             } else {
-                Write-Output "Can't Ping: $Server.Name"
+                Write-Output ("Can't Reach: " + $Server.Name)
                 }
         }
     # Export all printer information to a CSV file in the designated folder
@@ -734,19 +804,34 @@ function Get-RolesInstalled {
             It checks if each server is reachable, then retrieves and records the installed roles on each server.
             The results are saved to a CSV file on the user's desktop.
 
-        .PARAMETER None
-            This function does not take any parameters.
+        .PARAMETER All
+            When specified, retrieves DHCP scope data from all enabled Searvers that are reachable. Otherwise, retrieves data from the local server.
 
         .EXAMPLE
             Get-RolesInstalled
-            Runs the function and exports the installed roles on all reachable servers to a CSV file.
+            Retrieves the installed roles from the local server and saves it to CSV files.
+
+            Get-RolesInstalled -All
+            Retrieves the installed roles from all active servers within the specified timeframe and saves it to CSV files.
 
         .NOTES
             This function assumes the script is running on a Windows environment where PowerShell can access the desktop path using .NET Framework.
     #>
 
-    # Get all enabled servers in Active Directory
-    $Servers = Get-ADComputer -Filter {enabled -eq $true -and OperatingSystem -like '*Windows Server*'} -Properties *
+    param(
+        [switch]$All
+    )
+
+    # Get the name of the computer you are running the script on
+    $ComputerName = [System.Environment]::MachineName
+
+    # Get a list of all enabled servers in Active Directory
+    $Servers = Get-ADComputer -Filter {Enabled -eq $true -and OperatingSystem -like '*Windows Server*'} -Properties *
+
+    if (!($All)) {
+        $Servers = $Servers | Where-Object {$_.Name -eq $ComputerName}
+    }
+
     $RolesData = @()
 
     # Iterate through each server
@@ -763,14 +848,13 @@ function Get-RolesInstalled {
                 $RolesData += $NewRole
             }
         } else {
-            Write-Output ("Can't reach: " + $Server.Name)  # Output message for offline servers
+            Write-Output ("Can't reach: " + $Server.Name)
         }
     }
 
     # Export the collected role data to a CSV file
     $RolesData | Export-Csv -Path ($SavePath + "Roles.csv") -NoTypeInformation
 }
-
 
 function Get-ShareInfo {
     <#
@@ -780,19 +864,34 @@ function Get-ShareInfo {
         .DESCRIPTION
             This script connects to each enabled Windows Server in Active Directory, retrieves information about shared folders excluding built-in and printer shares, and exports the details (server name, share name, path, description) to a CSV file.
 
-        .PARAMETER
-            No additional parameters.
+        .PARAMETER All
+            When specified, retrieves DHCP scope data from all enabled Searvers that are reachable. Otherwise, retrieves data from the local server.
 
         .EXAMPLE
             Get-ShareInfo
-            Retrieves shared folder information from all enabled Windows Server machines in Active Directory and saves it to a CSV file named "Shares.csv" in the Information Gathered folder on the desktop.
+            Retrieves shared folder information from the local server and saves it to CSV files.
+
+            Get-ShareInfo -All
+            Retrieves shared folder information from all active servers within the specified timeframe and saves it to CSV files.
 
         .NOTES
             The script requires the Active Directory PowerShell module and administrator privileges to retrieve share information from remote servers.
     #>
 
-    # Get all enabled servers in Active Directory
-    $Servers = Get-ADComputer -Filter {enabled -eq $true -and OperatingSystem -like '*Windows Server*'} -Properties *
+    param(
+        [switch]$All
+    )
+
+    # Get the name of the computer you are running the script on
+    $ComputerName = [System.Environment]::MachineName
+
+    # Get a list of all enabled servers in Active Directory
+    $Servers = Get-ADComputer -Filter {Enabled -eq $true -and OperatingSystem -like '*Windows Server*'} -Properties *
+
+    if (!($All)) {
+        $Servers = $Servers | Where-Object {$_.Name -eq $ComputerName}
+    }
+
     $SharesData = @() 
 
     # Iterate through each server
@@ -822,7 +921,7 @@ function Get-ShareInfo {
                 $SharesData += $NewShare 
                 }
             } else {
-                Write-Output ("Can't reach: " + $Server.Name)  # Output message for offline servers
+                Write-Output ("Can't reach: " + $Server.Name)
                 }
         }
 
@@ -830,4 +929,144 @@ function Get-ShareInfo {
     $SharesData | Export-Csv -Path ($SavePath + "Shares.csv") -NoTypeInformation
 }
 
+function Validate-MacAddress {
+    <#
+        .SYNOPSIS
+            Validates whether a given string is a properly formatted MAC address.
+
+        .DESCRIPTION
+            The Validate-MacAddress function checks if the input string matches the
+            standard MAC address format. MAC addresses typically consist of six
+            pairs of hexadecimal digits separated by colons or hyphens.
+
+        .PARAMETER macAddress
+            The string representing the MAC address to be validated.
+
+        .EXAMPLE
+            Validate-MacAddress -macAddress "00:1A:2B:3C:4D:5E"
+            True
+
+            Validate-MacAddress -macAddress "00-1A-2B-3C-4D-5E"
+            True
+
+            Validate-MacAddress -macAddress "001A2B3C4D5E"
+            False
+    #>
+    param (
+        [string]$macAddress
+    )
+    # Define the regex pattern for a MAC address
+    $macPattern = '^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$'
+    if ($macAddress -match $macPattern) {
+        return $true
+    } else {
+        return $false
+    }
+}
+
+
+function Convert-WindowsDHCPToMerakiDHCP {
+    <#
+        .SYNOPSIS
+            Converts Windows DHCP reservation files to Meraki-compatible DHCP configuration files.
+
+        .DESCRIPTION
+            The Convert-WindowsDHCPToMerakiDHCP function reads CSV files containing DHCP reservation
+            data, validates MAC addresses, and separates the entries into fixed IPs and reserved IPs.
+            The function then exports the processed data into separate CSV files for fixed and reserved IPs.
+
+        .PARAMETER
+            None. The function does not take any parameters and operates on files found in a predefined directory.
+
+        .EXAMPLE
+            Convert-WindowsDHCPToMerakiDHCP
+            This command processes all DHCP reservation files in the specified directory, validates the
+            MAC addresses, and exports the data into separate CSV files for fixed and reserved IPs.
+    #>
+    # Get files with "Reservations" in the name from the specified directory
+    $DHCPReservations = Get-ChildItem -Path ($SavePath + "DHCP\") -Filter "*Reservations*"
+
+    # Process each file
+    foreach ($DHCPReservation in $DHCPReservations) {
+        try {
+            # Import the CSV content of the current file
+            $IPReservations = Import-Csv -Path $DHCPReservation.FullName
+
+            # Initialize arrays to store fixed and reserved IPs
+            $AllFixedIPs = @()
+            $AllReservedIPs = @()
+
+            # Define paths to save the output CSV files
+            $FixedIPSavePath = $DHCPReservation.FullName -replace "Reservations", "FixedIPs"
+            $ReservedIPSavePath = $DHCPReservation.FullName -replace "Reservations", "ReservedIPs"
+
+            # Process each reservation in the imported CSV
+            foreach ($IPReservation in $IPReservations) {
+                # Validate the MAC address
+                $Test = Validate-MacAddress -macAddress $IPReservation.ClientId
+                if ($Test) {
+                    # Create a custom object for fixed IPs if MAC address is valid
+                    $FixedIP = [PSCustomObject] @{
+                        ClientName = $IPReservation.Name
+                        MacAddress = $IPReservation.ClientId
+                        LanIP = $IPReservation.IPAddress
+                    }
+                    # Add to the fixed IPs array
+                    $AllFixedIPs += $FixedIP
+                } else {
+                    # Create a custom object for reserved IPs if MAC address is invalid
+                    $ReservedIP = [PSCustomObject] @{
+                        FirstIP = $IPReservation.IPAddress
+                        LastIP = $IPReservation.IPAddress
+                        Comment = $IPReservation.Name
+                    }
+                    # Add to the reserved IPs array
+                    $AllReservedIPs += $ReservedIP
+                }
+            }
+
+            # Export the fixed IPs to a CSV file
+            $AllFixedIPs | Export-Csv -Path $FixedIPSavePath -NoTypeInformation
+
+            # Export the reserved IPs to a CSV file
+            $AllReservedIPs | Export-Csv -Path $ReservedIPSavePath -NoTypeInformation
+        } catch {
+            Write-Error "Failed to process file: $($DHCPReservation.FullName). Error: $_"
+        }
+    }
+}
+
+
+
+Write-Output "Creating Desktop Folder"
 Create-DesktopINformationGathered
+#Get-ACLs _Path
+    # Must provide a path for the location of folders to get ACLs of
+Write-Output "Getting active servers"
+Get-ADActiveServers
+Write-Output "Getting active workstations"
+Get-ADActiveWorkstations
+Write-Output "Getting all groups and memberships"
+Get-ADAllGroupMemberships
+Write-Output "Getting disabled users"
+Get-ADDisabledUsers
+Write-Output "Getting enabled users"
+Get-ADEnabledUsers
+Write-Output "Getting inactive servers"
+Get-ADInactiveServers
+Write-Output "Getting inactive workstations"
+Get-ADInactiveWorkstations
+Write-Output "Getting DFS name spaces"
+Get-DFSNameSpaces  -All
+Write-Output "Getting DHCP scopes"
+Get-DHCPScopeData -All
+Write-Output "Getting installed applications"
+Get-InstalledApplications -All
+Write-Output "Getting shared printers"
+Get-Printers -All
+Write-Output "Getting installed roles"
+Get-RolesInstalled -All
+Write-Output "Getting shared folders"
+Get-ShareInfo -All
+Write-Output "Converting DHCP Reservations to Meraki Format"
+Convert-WindowsDHCPToMerakiDHCP
