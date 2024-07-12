@@ -1,4 +1,4 @@
-﻿function Get-RolesInstalled {
+function Get-RolesInstalled {
     <#
         .SYNOPSIS
             Retrieves the installed Windows Server roles on all enabled servers in Active Directory.
@@ -8,16 +8,23 @@
             It checks if each server is reachable, then retrieves and records the installed roles on each server.
             The results are saved to a CSV file on the user's desktop.
 
-        .PARAMETER None
-            This function does not take any parameters.
+        .PARAMETER All
+            When specified, retrieves DHCP scope data from all enabled Searvers that are reachable. Otherwise, retrieves data from the local server.
 
         .EXAMPLE
             Get-RolesInstalled
-            Runs the function and exports the installed roles on all reachable servers to a CSV file.
+            Retrieves the installed roles from the local server and saves it to CSV files.
+
+            Get-RolesInstalled -All
+            Retrieves the installed roles from all active servers within the specified timeframe and saves it to CSV files.
 
         .NOTES
             This function assumes the script is running on a Windows environment where PowerShell can access the desktop path using .NET Framework.
     #>
+
+    param(
+        [switch]$All
+    )
 
     # Get the path to the user's desktop
     $DesktopPath = [System.Environment]::GetFolderPath([System.Environment+SpecialFolder]::Desktop)
@@ -28,8 +35,16 @@
         New-Item -Path $SavePath -ItemType Directory -Force
     }
 
-    # Get all enabled servers in Active Directory
-    $Servers = Get-ADComputer -Filter {enabled -eq $true -and OperatingSystem -like '*Windows Server*'} -Properties *
+    # Get the name of the computer you are running the script on
+    $ComputerName = [System.Environment]::MachineName
+
+    # Get a list of all enabled servers in Active Directory
+    $Servers = Get-ADComputer -Filter {Enabled -eq $true -and OperatingSystem -like '*Windows Server*'} -Properties *
+
+    if (!($All)) {
+        $Servers = $Servers | Where-Object {$_.Name -eq $ComputerName}
+    }
+
     $RolesData = @()
 
     # Iterate through each server
@@ -46,7 +61,7 @@
                 $RolesData += $NewRole
             }
         } else {
-            Write-Output ("Can't reach: " + $Server.Name)  # Output message for offline servers
+            Write-Output ("Can't reach: " + $Server.Name)
         }
     }
 
