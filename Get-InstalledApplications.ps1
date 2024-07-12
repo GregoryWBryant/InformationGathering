@@ -6,16 +6,24 @@ function Get-InstalledApplications {
         .DESCRIPTION
             This script collects information about installed applications from servers within the Active Directory domain. It retrieves data from both 32-bit and 64-bit registry keys, creates custom objects for each application, and exports the information to CSV files stored in a directory on the user's desktop or copied from remote servers.
 
-        .PARAMETER 
-            No additional parameters.
+        .PARAMETER All
+            When specified, retrieves DHCP scope data from all enabled Searvers that are reachable. Otherwise, retrieves data from the local server.
 
         .EXAMPLE
             Get-InstalledApplications
+            Retrieves installed applications from the local server and saves it to CSV files.
+
+            Get-InstalledApplications -All
             Retrieves installed applications from all enabled servers in Active Directory, including the local server, and saves the data to CSV files.
 
         .NOTES
             The script requires the Active Directory PowerShell module and administrator privileges on remote servers to retrieve registry information.
     #>
+
+    param(
+        [switch]$All
+    )
+
 
     # Get the path to your desktop
     $DesktopPath = [System.Environment]::GetFolderPath([System.Environment+SpecialFolder]::Desktop)
@@ -27,10 +35,14 @@ function Get-InstalledApplications {
     }
 
     # Get the name of the computer you are running the script on
-    $ComputerName = (Get-ComputerInfo).CSName
+    $ComputerName = [System.Environment]::MachineName
 
     # Get a list of all enabled servers in Active Directory
     $Servers = Get-ADComputer -Filter {Enabled -eq $true -and OperatingSystem -like '*Windows Server*'} -Properties *
+
+    if (!($All)) {
+        $Servers = $Servers | Where-Object {$_.Name -eq $ComputerName}
+    }
 
     # Iterate through each server in the list
     foreach ($Server in $Servers) {
@@ -90,7 +102,7 @@ function Get-InstalledApplications {
                 Remove-Item -Path ("\\" + $Server.name + "\C$\Temp\" + $Server.name + "-Applications.csv")
             }
         } else {
-            Write-Output ("Can't reach: " + $Server.Name)  # Output message for offline servers
+            Write-Output ("Can't reach: " + $Server.Name)
         }
     }
 }
