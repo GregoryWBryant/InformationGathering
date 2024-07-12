@@ -19,7 +19,7 @@ function Get-ShareInfo {
         .NOTES
             The script requires the Active Directory PowerShell module and administrator privileges to retrieve share information from remote servers.
     #>
-
+ 
     param(
         [switch]$All
     )
