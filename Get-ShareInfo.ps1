@@ -6,16 +6,23 @@ function Get-ShareInfo {
         .DESCRIPTION
             This script connects to each enabled Windows Server in Active Directory, retrieves information about shared folders excluding built-in and printer shares, and exports the details (server name, share name, path, description) to a CSV file.
 
-        .PARAMETER
-            No additional parameters.
+        .PARAMETER All
+            When specified, retrieves DHCP scope data from all enabled Searvers that are reachable. Otherwise, retrieves data from the local server.
 
         .EXAMPLE
             Get-ShareInfo
-            Retrieves shared folder information from all enabled Windows Server machines in Active Directory and saves it to a CSV file named "Shares.csv" in the Information Gathered folder on the desktop.
+            Retrieves shared folder information from the local server and saves it to CSV files.
+
+            Get-ShareInfo -All
+            Retrieves shared folder information from all active servers within the specified timeframe and saves it to CSV files.
 
         .NOTES
             The script requires the Active Directory PowerShell module and administrator privileges to retrieve share information from remote servers.
     #>
+
+    param(
+        [switch]$All
+    )
 
     # Get the path to the user's desktop
     $DesktopPath = [System.Environment]::GetFolderPath([System.Environment+SpecialFolder]::Desktop)
@@ -26,8 +33,16 @@ function Get-ShareInfo {
         New-Item -Path $SavePath -ItemType Directory -Force
     }
 
-    # Get all enabled servers in Active Directory
-    $Servers = Get-ADComputer -Filter {enabled -eq $true -and OperatingSystem -like '*Windows Server*'} -Properties *
+    # Get the name of the computer you are running the script on
+    $ComputerName = [System.Environment]::MachineName
+
+    # Get a list of all enabled servers in Active Directory
+    $Servers = Get-ADComputer -Filter {Enabled -eq $true -and OperatingSystem -like '*Windows Server*'} -Properties *
+
+    if (!($All)) {
+        $Servers = $Servers | Where-Object {$_.Name -eq $ComputerName}
+    }
+
     $SharesData = @() 
 
     # Iterate through each server
@@ -57,7 +72,7 @@ function Get-ShareInfo {
                 $SharesData += $NewShare 
                 }
             } else {
-                Write-Output ("Can't reach: " + $Server.Name)  # Output message for offline servers
+                Write-Output ("Can't reach: " + $Server.Name)
                 }
         }
 
