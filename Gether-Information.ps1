@@ -903,7 +903,7 @@ function Get-ShareInfo {
             $Cim = New-CimSession -ComputerName $Server.Name 
             # Get shared folders, excluding built-in and printer shares
             $Shares = Get-SmbShare -CimSession $Cim | Where-Object {
-                $_.ShareType -eq "Disk" -and 
+                $_.ShareType -eq "FileSystemDirectory" -and 
                 $_.Name -notmatch "^(ADMIN\$|C\$|IPC\$|PRINT\$|NETLOGON|SYSVOL)" # Exclude common system shares
                 }
             # Close the CIM session
